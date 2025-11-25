@@ -8,6 +8,8 @@
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+const gridCanvas = document.getElementById('gridCanvas');
+const gridCtx = gridCanvas.getContext('2d');
 
 // UI Elements
 const scoreEl = document.getElementById('currentScore');
@@ -19,10 +21,12 @@ const levelOverlay = document.getElementById('levelOverlay');
 const startBtn = document.getElementById('startBtn');
 const nextLevelBtn = document.getElementById('nextLevelBtn');
 const statusText = document.getElementById('statusText');
+const countdownOverlay = document.getElementById('countdownOverlay');
+const countdownText = document.getElementById('countdownText');
 
 // Game Constants
-const GRID_SIZE = 20; // Number of cells per row/col
-const MAX_SCORE = 397; // 20x20 - 3 initial segments
+const GRID_SIZE = 14; // Number of cells per row/col
+const MAX_SCORE = GRID_SIZE * GRID_SIZE - 3; // Max possible score
 let TILE_SIZE = 0; // Calculated based on canvas size
 
 // Assets
@@ -141,7 +145,10 @@ function resizeCanvas() {
     const container = canvas.parentElement;
     canvas.width = container.clientWidth;
     canvas.height = container.clientHeight;
+    gridCanvas.width = container.clientWidth;
+    gridCanvas.height = container.clientHeight;
     TILE_SIZE = canvas.width / GRID_SIZE;
+    drawGrid();
 }
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
@@ -208,7 +215,9 @@ function handleSwipe(startX, startY, endX, endY) {
 
 // Game Logic
 function startGame() {
-    snake = [{ x: 10, y: 10 }, { x: 10, y: 11 }, { x: 10, y: 12 }]; // Head at top
+    const startX = Math.floor(GRID_SIZE / 2);
+    const startY = Math.floor(GRID_SIZE / 2);
+    snake = [{ x: startX, y: startY }, { x: startX, y: startY + 1 }, { x: startX, y: startY + 2 }]; // Head at top
     direction = { x: 0, y: -1 }; // Moving up
     nextDirectionQueue = [{ x: 0, y: -1 }];
     score = 0;
@@ -219,20 +228,20 @@ function startGame() {
     targetEl.textContent = targetScore;
 
     placeFood();
-    gameRunning = true;
     overlay.classList.add('hidden');
     levelOverlay.classList.add('hidden');
 
-    startTimer();
+    // Draw initial state
+    draw();
 
-    window.requestAnimationFrame(mainLoop);
+    startCountdown(() => {
+        gameRunning = true;
+        startTimer();
+        window.requestAnimationFrame(mainLoop);
+    });
 }
 
 function nextLevel() {
-    snake = [{ x: 10, y: 10 }, { x: 10, y: 11 }, { x: 10, y: 12 }];
-    direction = { x: 0, y: -1 };
-    nextDirectionQueue = [{ x: 0, y: -1 }];
-
     // Increase target and speed
     targetScore += 5;
     snakeSpeed += 0.5;
@@ -240,12 +249,35 @@ function nextLevel() {
     targetEl.textContent = targetScore;
 
     placeFood();
-    gameRunning = true;
     levelOverlay.classList.add('hidden');
 
-    startTimer();
+    // Draw state
+    draw();
 
-    window.requestAnimationFrame(mainLoop);
+    startCountdown(() => {
+        gameRunning = true;
+        startTimer();
+        window.requestAnimationFrame(mainLoop);
+    });
+}
+
+function startCountdown(callback) {
+    let count = 3;
+    countdownOverlay.classList.remove('hidden');
+    countdownText.textContent = count;
+
+    const interval = setInterval(() => {
+        count--;
+        if (count > 0) {
+            countdownText.textContent = count;
+        } else if (count === 0) {
+            countdownText.textContent = 'GO!';
+        } else {
+            clearInterval(interval);
+            countdownOverlay.classList.add('hidden');
+            if (callback) callback();
+        }
+    }, 1000);
 }
 
 function startTimer() {
@@ -354,19 +386,8 @@ function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Draw Grid (Optional, for style)
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-    ctx.lineWidth = 1;
-    for (let i = 0; i <= GRID_SIZE; i++) {
-        ctx.beginPath();
-        ctx.moveTo(i * TILE_SIZE, 0);
-        ctx.lineTo(i * TILE_SIZE, canvas.height);
-        ctx.stroke();
+    // Grid is now drawn on a separate canvas in drawGrid()
 
-        ctx.beginPath();
-        ctx.moveTo(0, i * TILE_SIZE);
-        ctx.lineTo(canvas.width, i * TILE_SIZE);
-        ctx.stroke();
-    }
 
     // Draw Food
     ctx.drawImage(assets.food, food.x * TILE_SIZE, food.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
@@ -469,3 +490,20 @@ function gameOver(victory = false) {
 
 startBtn.addEventListener('click', startGame);
 nextLevelBtn.addEventListener('click', nextLevel);
+
+function drawGrid() {
+    gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
+    gridCtx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+    gridCtx.lineWidth = 1;
+    for (let i = 0; i <= GRID_SIZE; i++) {
+        gridCtx.beginPath();
+        gridCtx.moveTo(i * TILE_SIZE, 0);
+        gridCtx.lineTo(i * TILE_SIZE, gridCanvas.height);
+        gridCtx.stroke();
+
+        gridCtx.beginPath();
+        gridCtx.moveTo(0, i * TILE_SIZE);
+        gridCtx.lineTo(gridCanvas.width, i * TILE_SIZE);
+        gridCtx.stroke();
+    }
+}

@@ -78,7 +78,8 @@
     <!-- Game Canvas Container -->
     <div class="relative w-full max-w-md aspect-square p-4 flex items-center justify-center">
         <div class="game-container relative w-full h-full rounded-xl overflow-hidden border-4 border-purple-500/30">
-            <canvas id="gameCanvas" class="block w-full h-full"></canvas>
+            <canvas id="gridCanvas" class="absolute inset-0 w-full h-full z-0"></canvas>
+            <canvas id="gameCanvas" class="absolute inset-0 w-full h-full z-10"></canvas>
 
             <!-- Start/Game Over Overlay -->
             <div id="overlay"
@@ -104,6 +105,14 @@
                     class="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full font-bold text-white shadow-lg transform transition hover:scale-105 active:scale-95 hover:shadow-green-500/50">
                     NEXT LEVEL
                 </button>
+            </div>
+            <!-- Countdown Overlay -->
+            <div id="countdownOverlay"
+                class="hidden absolute inset-0 bg-black/40 flex items-center justify-center z-30 backdrop-blur-sm">
+                <div id="countdownText"
+                    class="text-8xl font-black text-white drop-shadow-[0_0_15px_rgba(78,205,196,0.8)] animate-pulse">
+                    3
+                </div>
             </div>
         </div>
     </div>
